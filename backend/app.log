@@ -1946,3 +1946,5 @@ violations {
 }
 ]
 2025-07-17 19:08:48,400 - SyntheticDatasetGenerator - INFO - Shutting down Synthetic Dataset Generator API
+2025-07-17 21:05:31,485 - SyntheticDatasetGenerator - INFO - Starting Synthetic Dataset Generator API
+2025-07-17 21:05:51,575 - SyntheticDatasetGenerator - INFO - Shutting down Synthetic Dataset Generator API
