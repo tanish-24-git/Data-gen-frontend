@@ -40,7 +40,7 @@ app = FastAPI(
 # Enable CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://data-gen-utnp.vercel.app"],  # Allow Next.js dev server
+    allow_origins=["http://localhost:3000", "https://data-gen-utnp.vercel.app"],  # Add your Vercel URL,  # Allow Next.js dev server
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers (including x-api-key)
