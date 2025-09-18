@@ -15,14 +15,13 @@ import { Navigation } from "@/components/navigation"
 export default function PlaygroundPage() {
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState("")
-  const [numRowsStr, setNumRowsStr] = useState("1000") // String for input
-  const numRows = Number.parseInt(numRowsStr, 10) || 1000 // Parsed for use
+  const [numRowsStr, setNumRowsStr] = useState("1000")
+  const numRows = Number.parseInt(numRowsStr, 10) || 1000
   const [format, setFormat] = useState("csv")
   const [isGenerating, setIsGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
-  // Reset state on mount to avoid hydration issues
   useEffect(() => {
     console.log("Component mounted, resetting numRowsStr to 1000")
     setNumRowsStr("1000")
@@ -262,14 +261,16 @@ export default function PlaygroundPage() {
                     Number of Rows
                   </Label>
                   <Input
-                    key={`num-rows-${numRowsStr}`} // Force re-render
+                    key={`num-rows-${numRowsStr}`}
                     id="num-rows"
-                    type="text"
+                    type="number"
+                    min="1"
+                    max="100000"
                     value={numRowsStr}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "")
+                      const val = e.target.value
                       console.log("Input changed:", val, "Parsed:", Number.parseInt(val, 10) || 1000)
-                      setNumRowsStr(val || "1000")
+                      setNumRowsStr(val)
                     }}
                     onBlur={() => {
                       const num = Number.parseInt(numRowsStr, 10) || 1000
@@ -277,6 +278,7 @@ export default function PlaygroundPage() {
                       console.log("Blur set to:", clamped)
                       setNumRowsStr(clamped.toString())
                     }}
+                    suppressHydrationWarning
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-2">Generate between 1 and 100,000 rows</p>
