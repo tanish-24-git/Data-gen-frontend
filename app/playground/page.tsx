@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,8 +15,7 @@ import { Navigation } from "@/components/navigation"
 export default function PlaygroundPage() {
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState("")
-  const [numRowsStr, setNumRowsStr] = useState("1000") // String state for input
-  const numRows = Number.parseInt(numRowsStr, 10) || 1000 // Parsed value for use
+  const [numRows, setNumRows] = useState(1000) // Use number for simplicity
   const [format, setFormat] = useState("csv")
   const [isGenerating, setIsGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -76,34 +74,32 @@ export default function PlaygroundPage() {
 
     try {
       const formData = new FormData()
-
       if (file) {
         formData.append("file", file)
       }
-
       if (prompt.trim()) {
         formData.append("prompt", prompt.trim())
       }
 
-      const clampedRows = Math.min(Math.max(numRows, 1), 100000) // Clamp to valid range
+      const clampedRows = Math.min(Math.max(numRows, 1), 100000) // Clamp to 1–100,000
       formData.append("num_rows", clampedRows.toString())
       formData.append("format", format)
 
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      console.log("Sending request with num_rows:", clampedRows) // Debug
+
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
       const response = await fetch(`${apiBaseUrl}/api/generate-dataset`, {
         method: "POST",
         body: formData,
-      })    
+      })
 
       if (!response.ok) {
         throw new Error("Failed to generate dataset")
       }
 
-      // Extract filename from Content-Disposition header
       const contentDisposition = response.headers.get("Content-Disposition")
       const filename = contentDisposition?.match(/filename=(.+)/)?.[1] || `dataset.${format}`
 
-      // Create blob and trigger download
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -134,10 +130,8 @@ export default function PlaygroundPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4 text-balance">
               Create Synthetic Datasets Instantly
@@ -148,7 +142,6 @@ export default function PlaygroundPage() {
             </p>
           </div>
 
-          {/* How It Works Section */}
           <div className="mb-12">
             <h3 className="text-2xl font-bold text-foreground text-center mb-8">How It Works</h3>
             <div className="grid md:grid-cols-3 gap-6">
@@ -191,9 +184,7 @@ export default function PlaygroundPage() {
             </div>
           </div>
 
-          {/* Main Form Grid */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Left Column - File Upload */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -253,8 +244,7 @@ export default function PlaygroundPage() {
               </CardContent>
             </Card>
 
-            {/* Right Column - Configuration */}
-            <Card>
+            <Card key={`config-${numRows}`}> {/* Force re-render if numRows changes */}
               <CardHeader>
                 <CardTitle>Dataset Configuration</CardTitle>
                 <CardDescription>Configure the output format and size of your synthetic dataset</CardDescription>
@@ -266,9 +256,22 @@ export default function PlaygroundPage() {
                   </Label>
                   <Input
                     id="num-rows"
-                    type="text" // Changed to text for better handling
-                    value={numRowsStr}
-                    onChange={(e) => setNumRowsStr(e.target.value.replace(/\D/g, ''))} // Digits only
+                    type="number"
+                    min="1"
+                    max="100000"
+                    value={numRows}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const num = Number.parseInt(val, 10)
+                      console.log("Input changed:", val, "Parsed:", num) // Debug
+                      setNumRows(isNaN(num) ? 1000 : Math.min(Math.max(num, 1), 100000))
+                    }}
+                    onBlur={() => {
+                      if (isNaN(numRows) || numRows < 1) {
+                        console.log("Blur reset to 1000") // Debug
+                        setNumRows(1000)
+                      }
+                    }}
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-2">Generate between 1 and 100,000 rows</p>
@@ -319,7 +322,7 @@ export default function PlaygroundPage() {
                         <strong>Input:</strong> {file ? `File: ${file.name}` : "Text prompt"}
                       </p>
                       <p>
-                        <strong>Rows:</strong> {numRows.toLocaleString()}
+                        <strong>Rows:</strong> {Math.min(Math.max(numRows, 1), 100000).toLocaleString()}
                       </p>
                       <p>
                         <strong>Format:</strong> {format.toUpperCase()}
