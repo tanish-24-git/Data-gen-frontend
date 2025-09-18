@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,11 +15,18 @@ import { Navigation } from "@/components/navigation"
 export default function PlaygroundPage() {
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState("")
-  const [numRows, setNumRows] = useState(1000) // Use number for simplicity
+  const [numRowsStr, setNumRowsStr] = useState("1000") // String for input
+  const numRows = Number.parseInt(numRowsStr, 10) || 1000 // Parsed for use
   const [format, setFormat] = useState("csv")
   const [isGenerating, setIsGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  // Reset state on mount to avoid hydration issues
+  useEffect(() => {
+    console.log("Component mounted, resetting numRowsStr to 1000")
+    setNumRowsStr("1000")
+  }, [])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]
@@ -81,11 +88,11 @@ export default function PlaygroundPage() {
         formData.append("prompt", prompt.trim())
       }
 
-      const clampedRows = Math.min(Math.max(numRows, 1), 100000) // Clamp to 1–100,000
+      const clampedRows = Math.min(Math.max(numRows, 1), 100000)
       formData.append("num_rows", clampedRows.toString())
       formData.append("format", format)
 
-      console.log("Sending request with num_rows:", clampedRows) // Debug
+      console.log("Sending request with num_rows:", clampedRows)
 
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
       const response = await fetch(`${apiBaseUrl}/api/generate-dataset`, {
@@ -244,7 +251,7 @@ export default function PlaygroundPage() {
               </CardContent>
             </Card>
 
-            <Card key={`config-${numRows}`}> {/* Force re-render if numRows changes */}
+            <Card key={`config-${numRowsStr}`}>
               <CardHeader>
                 <CardTitle>Dataset Configuration</CardTitle>
                 <CardDescription>Configure the output format and size of your synthetic dataset</CardDescription>
@@ -255,22 +262,20 @@ export default function PlaygroundPage() {
                     Number of Rows
                   </Label>
                   <Input
+                    key={`num-rows-${numRowsStr}`} // Force re-render
                     id="num-rows"
-                    type="number"
-                    min="1"
-                    max="100000"
-                    value={numRows}
+                    type="text"
+                    value={numRowsStr}
                     onChange={(e) => {
-                      const val = e.target.value
-                      const num = Number.parseInt(val, 10)
-                      console.log("Input changed:", val, "Parsed:", num) // Debug
-                      setNumRows(isNaN(num) ? 1000 : Math.min(Math.max(num, 1), 100000))
+                      const val = e.target.value.replace(/\D/g, "")
+                      console.log("Input changed:", val, "Parsed:", Number.parseInt(val, 10) || 1000)
+                      setNumRowsStr(val || "1000")
                     }}
                     onBlur={() => {
-                      if (isNaN(numRows) || numRows < 1) {
-                        console.log("Blur reset to 1000") // Debug
-                        setNumRows(1000)
-                      }
+                      const num = Number.parseInt(numRowsStr, 10) || 1000
+                      const clamped = Math.min(Math.max(num, 1), 100000)
+                      console.log("Blur set to:", clamped)
+                      setNumRowsStr(clamped.toString())
                     }}
                     className="mt-2"
                   />
