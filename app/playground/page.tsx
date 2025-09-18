@@ -16,7 +16,8 @@ import { Navigation } from "@/components/navigation"
 export default function PlaygroundPage() {
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState("")
-  const [numRows, setNumRows] = useState(1000)
+  const [numRowsStr, setNumRowsStr] = useState("1000") // String state for input
+  const numRows = Number.parseInt(numRowsStr, 10) || 1000 // Parsed value for use
   const [format, setFormat] = useState("csv")
   const [isGenerating, setIsGenerating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -84,7 +85,8 @@ export default function PlaygroundPage() {
         formData.append("prompt", prompt.trim())
       }
 
-      formData.append("num_rows", numRows.toString())
+      const clampedRows = Math.min(Math.max(numRows, 1), 100000) // Clamp to valid range
+      formData.append("num_rows", clampedRows.toString())
       formData.append("format", format)
 
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
@@ -264,11 +266,9 @@ export default function PlaygroundPage() {
                   </Label>
                   <Input
                     id="num-rows"
-                    type="number"
-                    min="1"
-                    max="100000"
-                    value={numRows}
-                    onChange={(e) => setNumRows(Number.parseInt(e.target.value) || 1000)}
+                    type="text" // Changed to text for better handling
+                    value={numRowsStr}
+                    onChange={(e) => setNumRowsStr(e.target.value.replace(/\D/g, ''))} // Digits only
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-2">Generate between 1 and 100,000 rows</p>
